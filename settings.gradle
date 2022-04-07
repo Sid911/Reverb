@@ -1,0 +1,20 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        google()
+        mavenCentral()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            name = "Bintray WaveBeans"
+            url = uri("https://dl.bintray.com/wavebeans/wavebeans")
+        }
+    }
+}
+rootProject.name = "Reverb"
+include ':app'
