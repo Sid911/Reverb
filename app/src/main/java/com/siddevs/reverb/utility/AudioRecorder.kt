@@ -4,17 +4,16 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.media.*
-
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.app.ComponentActivity
 import java.io.*
+import kotlin.math.absoluteValue
 
 
-class AudioRecorder(val fileName: String,val context: Context, val activity: ComponentActivity) {
+class AudioRecorder(val fileName: String, private val context: Context, private val activity: ComponentActivity) {
     private val TAG = "AudioRecorder";
-
     init {
         val fileAudio = File(fileName)
         if (fileAudio.exists()) {
@@ -38,7 +37,7 @@ class AudioRecorder(val fileName: String,val context: Context, val activity: Com
     private var playingThread: Thread? = null
 
     private val AUDIO_SOURCE =
-        MediaRecorder.AudioSource.UNPROCESSED // for raw audio, use MediaRecorder.AudioSource.UNPROCESSED, see note in MediaRecorder section
+        MediaRecorder.AudioSource.DEFAULT // for raw audio, use MediaRecorder.AudioSource.UNPROCESSED, see note in MediaRecorder section
 
     private val SAMPLE_RATE = 44100
     private val CHANNEL_CONFIG: Int = AudioFormat.CHANNEL_IN_MONO
@@ -47,6 +46,7 @@ class AudioRecorder(val fileName: String,val context: Context, val activity: Com
         AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT)
 
     var audioRecord: AudioRecord? = null
+    var amplitude : Short = 0
 
     fun startRecording() {
         if (ActivityCompat.checkSelfPermission(
@@ -82,8 +82,7 @@ class AudioRecorder(val fileName: String,val context: Context, val activity: Com
 
     private fun writeAudioData() {
         // to be called in a Runnable for a Thread created after call to startRecording()
-        val data =
-            ByteArray(BUFFER_SIZE_RECORDING / 2) // assign size so that bytes are read in in chunks inferior to AudioRecord internal buffer size
+        val data : ByteArray = ByteArray(BUFFER_SIZE_RECORDING / 2) // assign size so that bytes are read in in chunks inferior to AudioRecord internal buffer size
         var outputStream: FileOutputStream? = null
         try {
             outputStream =
@@ -93,6 +92,16 @@ class AudioRecorder(val fileName: String,val context: Context, val activity: Com
         }
         while (continueRecording) { // continueRecording can be toggled by a button press, handled by the main (UI) thread
             val read = audioRecord!!.read(data, 0, data.size)
+            val maxVal = data.maxOrNull()
+            if(maxVal!=null)amplitude = maxVal.toShort()
+//            var sDataMax : Float= 0.0F
+//            for (i in data) {
+//                println(i)
+//                if (i.toFloat().absoluteValue >= sDataMax) {
+//                    sDataMax = i.toFloat().absoluteValue
+//                }
+//            }
+//            amplitude = sDataMax
             try {
                 outputStream?.write(data, 0, read)
             } catch (e: IOException) {
@@ -104,7 +113,7 @@ class AudioRecorder(val fileName: String,val context: Context, val activity: Com
             outputStream?.flush()
             outputStream?.close()
         } catch (e: IOException) {
-            Log.d("Main", "exception while closing output stream $e")
+            Log.d(TAG, "exception while closing output stream $e")
             e.printStackTrace()
         }
         isRecordingAudio = false;
@@ -119,6 +128,8 @@ class AudioRecorder(val fileName: String,val context: Context, val activity: Com
     private val BUFFER_SIZE_PLAYING =
         AudioTrack.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO, AUDIO_FORMAT)
 
+//    private var loudnessEnhancer :LoudnessEnhancer? = null
+//    private var noiseSuppressor : NoiseSuppressor? = null
     fun startPlaying() {
         val audioAttributes = AudioAttributes.Builder()
             .setContentType(AudioAttributes.CONTENT_TYPE_UNKNOWN) // defines the type of content being played
@@ -136,7 +147,6 @@ class AudioRecorder(val fileName: String,val context: Context, val activity: Com
             AudioTrack.MODE_STREAM,
             AudioManager.AUDIO_SESSION_ID_GENERATE
         )
-
         if (audioTrack!!.state != AudioTrack.STATE_INITIALIZED) {
             Toast.makeText(
                 context,
@@ -146,6 +156,9 @@ class AudioRecorder(val fileName: String,val context: Context, val activity: Com
             Log.e("Main", "error initializing AudioTrack")
             return
         }
+        // effects
+//        loudnessEnhancer = LoudnessEnhancer(audioTrack!!.audioSessionId);
+//        loudnessEnhancer!!.setTargetGain(1);
 
         audioTrack!!.play()
         Log.d("Main", "playback started with AudioTrack")
@@ -180,8 +193,12 @@ class AudioRecorder(val fileName: String,val context: Context, val activity: Com
             // handle exception
         }
         isPlayingAudio = false;
+        // release effects
         audioTrack!!.stop()
         audioTrack!!.release()
         audioTrack = null
+//        loudnessEnhancer!!.release();
+//        loudnessEnhancer = null;
+
     }
 }
