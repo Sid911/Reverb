@@ -8,7 +8,9 @@ import androidx.core.app.ComponentActivity
 import java.io.IOException
 
 
-class AudioRecorderM(private val fileName: String, private val context: Context, private val activity: ComponentActivity) {
+class AudioRecorderM(
+    private val fileName: String,
+) {
     var recorder: MediaRecorder? = null
 
     fun startRecording() {
@@ -40,7 +42,7 @@ class AudioRecorderM(private val fileName: String, private val context: Context,
     private var player: MediaPlayer? = null
 
 
-     fun startPlaying() {
+    fun startPlaying() {
         player = MediaPlayer()
         try {
             player!!.setDataSource(fileName) // pass reference to file to be played
@@ -56,9 +58,9 @@ class AudioRecorderM(private val fileName: String, private val context: Context,
             // handle error
         }
         player!!.start()
-         player!!.setOnCompletionListener {
-             stopPlaying()
-         }
+        player!!.setOnCompletionListener {
+            stopPlaying()
+        }
     }
 
     private fun stopPlaying() {

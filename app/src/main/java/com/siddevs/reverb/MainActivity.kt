@@ -12,14 +12,19 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.siddevs.reverb.ui.analysis.AnalysisPage
 import com.siddevs.reverb.ui.home.MainPage
 import com.siddevs.reverb.ui.home.Waveform
 import com.siddevs.reverb.ui.theme.ReverbTheme
 import com.siddevs.reverb.utility.AudioRecorderM
 import com.siddevs.reverb.utility.Timer
-import kotlin.math.min
 
 
 class MainActivity : ComponentActivity(), Timer.OnTimerTickListener {
@@ -36,7 +41,7 @@ class MainActivity : ComponentActivity(), Timer.OnTimerTickListener {
         val fileNameAudio2 = filesDir.path + "/testfile2" + ".pcm"
         Log.d("MainActivity", "fileDir $fileNameAudio");
 //        audioRecorder =AudioRecorder(fileName = fileNameAudio,this,this)
-        mediaRecorder = AudioRecorderM(fileName = fileNameAudio2, this, this)
+        mediaRecorder = AudioRecorderM(fileName = fileNameAudio2)
 
         timer = Timer(this)
         vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
@@ -55,14 +60,12 @@ class MainActivity : ComponentActivity(), Timer.OnTimerTickListener {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
-                    Column {
-                        MainPage(
-                            audioRecorder = mediaRecorder,
-                            timer = timer,
-                            vibrator = vibrator,
-                            onStop = {})
-                        Waveform(array = amplitudes.toTypedArray())
-                    }
+                    ReverbApp(
+                        mediaRecorder = mediaRecorder,
+                        timer = timer,
+                        vibrator = vibrator,
+                        amplitudes = amplitudes
+                    )
                 }
             }
         }
@@ -87,6 +90,32 @@ class MainActivity : ComponentActivity(), Timer.OnTimerTickListener {
         mediaRecorder.recorder?.let {
             amplitudes.add(it.maxAmplitude.toFloat());
         }
+    }
+}
+
+
+@Composable
+fun ReverbApp(
+    mediaRecorder: AudioRecorderM,
+    timer: Timer,
+    vibrator: Vibrator,
+    amplitudes: SnapshotStateList<Float>
+) {
+    val navController: NavHostController = rememberNavController()
+
+    NavHost(navController = navController, startDestination = "home") {
+        composable("home") {
+            Column {
+                MainPage(
+                    audioRecorder = mediaRecorder,
+                    timer = timer,
+                    vibrator = vibrator,
+                    onStop = { navController.navigate("analysis"); amplitudes.clear() })
+                Waveform(array = amplitudes.toTypedArray())
+            }
+        }
+        composable("analysis") { AnalysisPage(navHostController = navController) }
+        /*...*/
     }
 }
 
