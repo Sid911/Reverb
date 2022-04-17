@@ -11,11 +11,13 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.siddevs.reverb.utility.AudioRecorder
+
 
 @Composable
-fun AnalysisPage(navHostController: NavHostController) {
+fun AnalysisPage(navHostController: NavHostController,audioRecorder: AudioRecorder) {
     val isLightTheme = MaterialTheme.colors.isLight;
-    Column(modifier = Modifier.padding(20.dp)) {
+    Column() {
         IconButton(onClick = { navHostController.popBackStack() }) {
             Icon(
                 Icons.Outlined.ArrowBack, contentDescription = "Record",
@@ -26,6 +28,8 @@ fun AnalysisPage(navHostController: NavHostController) {
                 modifier = Modifier.scale(1F)
             )
         }
-        Text(text = "This is analysis Page")
+        Text(text = "This is analysis Page", modifier= Modifier.padding(20.dp))
+
+        Spectrogram(audioRecorder.getFFT(), isLightMode = isLightTheme, height = 800F)
     }
 }

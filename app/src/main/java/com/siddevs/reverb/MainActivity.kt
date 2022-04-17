@@ -10,10 +10,13 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -22,13 +25,15 @@ import androidx.navigation.compose.rememberNavController
 import com.siddevs.reverb.ui.analysis.AnalysisPage
 import com.siddevs.reverb.ui.home.MainPage
 import com.siddevs.reverb.ui.home.Waveform
+import com.siddevs.reverb.ui.theme.Grey50
 import com.siddevs.reverb.ui.theme.ReverbTheme
+import com.siddevs.reverb.utility.AudioRecorder
 import com.siddevs.reverb.utility.AudioRecorderM
 import com.siddevs.reverb.utility.Timer
 
 
 class MainActivity : ComponentActivity(), Timer.OnTimerTickListener {
-    //    private lateinit var audioRecorder: AudioRecorder
+        private lateinit var audioRecorder: AudioRecorder
     private lateinit var mediaRecorder: AudioRecorderM
     private lateinit var timer: Timer
     private lateinit var vibrator: Vibrator
@@ -38,9 +43,9 @@ class MainActivity : ComponentActivity(), Timer.OnTimerTickListener {
         super.onCreate(savedInstanceState)
 
         val fileNameAudio = filesDir.path + "/testfile" + ".pcm"
-        val fileNameAudio2 = filesDir.path + "/testfile2" + ".pcm"
+        val fileNameAudio2 = filesDir.path + "/testfile2" + ".3gp"
         Log.d("MainActivity", "fileDir $fileNameAudio");
-//        audioRecorder =AudioRecorder(fileName = fileNameAudio,this,this)
+        audioRecorder = AudioRecorder(filepath = fileNameAudio,this,this)
         mediaRecorder = AudioRecorderM(fileName = fileNameAudio2)
 
         timer = Timer(this)
@@ -61,6 +66,7 @@ class MainActivity : ComponentActivity(), Timer.OnTimerTickListener {
                     color = MaterialTheme.colors.background
                 ) {
                     ReverbApp(
+                        audioRecorder= audioRecorder,
                         mediaRecorder = mediaRecorder,
                         timer = timer,
                         vibrator = vibrator,
@@ -96,6 +102,7 @@ class MainActivity : ComponentActivity(), Timer.OnTimerTickListener {
 
 @Composable
 fun ReverbApp(
+    audioRecorder: AudioRecorder,
     mediaRecorder: AudioRecorderM,
     timer: Timer,
     vibrator: Vibrator,
@@ -107,14 +114,18 @@ fun ReverbApp(
         composable("home") {
             Column {
                 MainPage(
-                    audioRecorder = mediaRecorder,
+                    audioRecorder = audioRecorder,
+                    mediaRecorder = mediaRecorder,
                     timer = timer,
                     vibrator = vibrator,
                     onStop = { navController.navigate("analysis"); amplitudes.clear() })
                 Waveform(array = amplitudes.toTypedArray())
+                FloatingActionButton(onClick = { navController.navigate("analysis") }, shape = RoundedCornerShape(size = 20.dp), backgroundColor = Grey50) {
+                    
+                }
             }
         }
-        composable("analysis") { AnalysisPage(navHostController = navController) }
+        composable("analysis") { AnalysisPage(navHostController = navController, audioRecorder = audioRecorder) }
         /*...*/
     }
 }

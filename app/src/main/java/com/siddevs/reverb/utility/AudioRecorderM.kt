@@ -47,7 +47,7 @@ class AudioRecorderM(
         try {
             player!!.setDataSource(fileName) // pass reference to file to be played
             player!!.setAudioAttributes(
-                AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_UNKNOWN)
                     .setUsage(AudioAttributes.USAGE_MEDIA)
                     .build()
             ) // optional step

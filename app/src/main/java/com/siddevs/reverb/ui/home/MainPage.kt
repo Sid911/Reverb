@@ -26,7 +26,7 @@ import com.siddevs.reverb.utility.AudioRecorderM
 import com.siddevs.reverb.utility.Timer
 
 @Composable
-fun MainPage(audioRecorder: AudioRecorderM, timer: Timer, vibrator: Vibrator, onStop: ()->Unit) {
+fun MainPage(audioRecorder: AudioRecorder,mediaRecorder: AudioRecorderM, timer: Timer, vibrator: Vibrator, onStop: ()->Unit) {
     val isLightTheme = MaterialTheme.colors.isLight;
     var click by remember { mutableStateOf(false) };
     val scale: Float by animateFloatAsState(if (click) 2f else 1f)
@@ -50,19 +50,19 @@ fun MainPage(audioRecorder: AudioRecorderM, timer: Timer, vibrator: Vibrator, on
             Button(
                 onClick = {
                     if(click) {
-//                        audioRecorder.continueRecording = false;
-                        audioRecorder.stopRecording();
+                        audioRecorder.continueRecording = false;
+                        mediaRecorder.stopRecording();
                         timer.stop()
-                        audioRecorder.startPlaying();
                         title = "Reverb"
-
                         onStop()
+
                     } else {
                         timer.start()
                         audioRecorder.startRecording()
+                        mediaRecorder.startRecording()
                         title = "Reverb :P"
                     }
-                    vibrator.vibrate(VibrationEffect.createOneShot(50,VibrationEffect.DEFAULT_AMPLITUDE))
+                    vibrator.vibrate(VibrationEffect.createOneShot(100,VibrationEffect.DEFAULT_AMPLITUDE))
                     click = !click ;
                 },
                 colors = ButtonDefaults.buttonColors(backgroundColor = if(click) BlueA100 else{ if (isLightTheme) Grey900 else Grey200}),
@@ -87,9 +87,4 @@ fun MainPage(audioRecorder: AudioRecorderM, timer: Timer, vibrator: Vibrator, on
             };
         }
     }
-}
-
-@Composable
-fun Greeting(name: String) {
-    Text(text = "Hello $name!")
 }
