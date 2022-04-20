@@ -2,7 +2,7 @@ package com.siddevs.reverb.ui.analysis
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -10,40 +10,54 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.dp
-import io.wavebeans.lib.BeanStream
-import io.wavebeans.lib.io.out
+import com.siddevs.reverb.ui.theme.BlueA100
+import com.siddevs.reverb.ui.theme.Grey200
 import io.wavebeans.lib.stream.fft.FftSample
-import io.wavebeans.lib.stream.trim
-import java.lang.Float.min
 import kotlin.math.absoluteValue
+import kotlin.math.min
 
-fun drawSpectrogram(drawScope: DrawScope, fft: BeanStream<FftSample>,size: Size){
-    val sequenceItr = fft.trim(3000).asSequence(sampleRate = 44100F).iterator()
+fun drawSpectrogram(drawScope: DrawScope, fft: List<FftSample>, height: Float, defaultColor: Color) {
+    val sequenceItr = fft.iterator()
     var count = 0F
-    while (sequenceItr.hasNext()){
+    while (sequenceItr.hasNext()) {
         val currentSample = sequenceItr.next()
         val magnitudeItr = currentSample.magnitude().iterator()
-        for (freq in currentSample.frequency()){
-            val y1 = freq.toFloat() / 30F + 2F
-            val y2 = y1 + 2
-            val magnitude = magnitudeItr.next().toFloat().absoluteValue / 30F
-            drawScope.drawLine(color = Color.White.copy(alpha = min(magnitude,1F)), start = Offset(count,y1), end = Offset(count, y2), strokeWidth = 1F)
+        for (freq in currentSample.frequency()) {
+            val y1 = height - (freq.toFloat() / 30F)
+            val y2 = y1 - 1
+            val magnitude = magnitudeItr.next()
+            val alpha = min(magnitude.absoluteValue / 50F, 1f.toDouble()).toFloat()
+            val color :Color = if(magnitude < 0){
+                Color.Green.copy(alpha = 1F)
+            } else if (magnitude < 25){
+                BlueA100.copy(alpha = alpha)
+            } else {
+                defaultColor.copy(alpha = alpha)
+            }
+            drawScope.drawLine(
+                color = color,
+                start = Offset(count, y1),
+                end = Offset(count, y2),
+                strokeWidth = 1F
+            )
         }
-        count+=4
+        count += 2F
     }
-
 }
 
 
 @Composable
-fun Spectrogram(fft: BeanStream<FftSample>, isLightMode: Boolean, height:Float) {
+fun Spectrogram(fft: List<FftSample>, isLightMode: Boolean, height: Float) {
     Canvas(
         modifier = Modifier
             .fillMaxWidth()
-            .height(40.dp),
+            .offset(y = 20.dp),
         onDraw = {
-            drawRect(color = if(isLightMode ) Color.White else Color.Black, size = Size(width=size.width, height = height) )
-            drawSpectrogram(this, fft,size)
+            drawRect(
+                color = if (isLightMode) Grey200 else Color.Black,
+                size = Size(width = size.width, height = height)
+            )
+            drawSpectrogram(this, fft, height, if (isLightMode) Color.Black else Color.White)
         },
     )
 }

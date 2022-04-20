@@ -8,11 +8,13 @@ import android.util.Log
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.app.ComponentActivity
+import io.wavebeans.execution.SingleThreadedOverseer
 import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.io.input
 import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.fft.fft
+import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
 import java.io.*
 
@@ -22,12 +24,12 @@ class AudioRecorder(
     private val context: Context,
     private val activity: ComponentActivity
 ) {
-    private val TAG = "AudioRecorder";
+    private val TAG = "AudioRecorder"
 
     init {
         val fileAudio = File(filepath)
         if (fileAudio.exists()) {
-            fileAudio.delete();
+            fileAudio.delete()
         }
         try {
             fileAudio.createNewFile()
@@ -71,7 +73,7 @@ class AudioRecorder(
             )
             return
         }
-        Log.d(TAG, "The buffer size is : $BUFFER_SIZE_RECORDING");
+        Log.d(TAG, "The buffer size is : $BUFFER_SIZE_RECORDING")
         audioRecord = AudioRecord(
             AUDIO_SOURCE,
             SAMPLE_RATE,
@@ -84,7 +86,7 @@ class AudioRecorder(
             return
         }
         audioRecord!!.startRecording()
-        Log.d("Main", "recording started with AudioRecord");
+        Log.d("Main", "recording started with AudioRecord")
 
         isRecordingAudio = true
         continueRecording = true
@@ -96,14 +98,14 @@ class AudioRecorder(
 
     private fun writeAudioData() {
         // to be called in a Runnable for a Thread created after call to startRecording()
-        val data: ByteArray =
+        val data =
             ByteArray(BUFFER_SIZE_RECORDING / 2) // assign size so that bytes are read in in chunks inferior to AudioRecord internal buffer size
-        var outputStream: FileOutputStream? = null
+        val outputStream: FileOutputStream?
         try {
             outputStream =
                 FileOutputStream(filepath) //fileName is path to a file, where audio data should be written
         } catch (e: FileNotFoundException) {
-            throw e;
+            throw e
         }
         while (continueRecording) { // continueRecording can be toggled by a button press, handled by the main (UI) thread
             val read = audioRecord!!.read(data, 0, data.size)
@@ -121,7 +123,7 @@ class AudioRecorder(
             Log.d(TAG, "exception while closing output stream $e")
             e.printStackTrace()
         }
-        isRecordingAudio = false;
+        isRecordingAudio = false
         // Clean up
         audioRecord!!.stop()
         audioRecord!!.release()
@@ -197,7 +199,7 @@ class AudioRecorder(
         } catch (e: IOException) {
             // handle exception
         }
-        isPlayingAudio = false;
+        isPlayingAudio = false
         // release effects
         audioTrack!!.stop()
         audioTrack!!.release()
@@ -205,10 +207,10 @@ class AudioRecorder(
 
     }
 
-    fun getFFT(): BeanStream<FftSample> {
+    fun getFFT(): List<FftSample> {
         val data = File(filepath).readBytes().map { sampleOf(it) }.toList()
         val inp = data.input()
-        return inp.window(SAMPLE_RATE / 100).fft(512)
+        return inp.trim(6000).window(SAMPLE_RATE / 100).fft(512).asSequence(SAMPLE_RATE.toFloat()).toList()
     }
 
 
