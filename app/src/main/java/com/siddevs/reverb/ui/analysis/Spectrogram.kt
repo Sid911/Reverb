@@ -28,7 +28,7 @@ fun drawSpectrogram(drawScope: DrawScope, fft: List<FftSample>, height: Float, d
             val magnitude = magnitudeItr.next()
             val alpha = min(magnitude.absoluteValue / 50F, 1f.toDouble()).toFloat()
             val color :Color = if(magnitude < 0){
-                Color.Green.copy(alpha = 1F)
+                Color.Yellow.copy(alpha = min(alpha*3, 1F) )
             } else if (magnitude < 25){
                 BlueA100.copy(alpha = alpha)
             } else {
